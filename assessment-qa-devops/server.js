@@ -1,6 +1,16 @@
 const express = require("express");
 const bots = require("./src/botsData");
 const shuffle = require("./src/shuffle");
+const path = require('path');
+const Rollbar = require('rollbar');
+
+const rollbar = new Rollbar({
+  accessToken: '7f8be677901d4c728f520ce456315ea9',
+  captureUncaught: true,
+  captureUnhandledRejections: true,
+});
+
+rollbar.log('Hello World')
 
 const playerRecord = {
   wins: 0,
@@ -9,6 +19,7 @@ const playerRecord = {
 const app = express();
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Add up the total health of all the robots
 const calculateTotalHealth = (robots) =>
@@ -40,6 +51,7 @@ app.get("/api/robots", (req, res) => {
     res.status(200).send(botsArr);
   } catch (error) {
     console.error("ERROR GETTING BOTS", error);
+    rollbar.error(error);
     res.sendStatus(400);
   }
 });
@@ -50,6 +62,7 @@ app.get("/api/robots/shuffled", (req, res) => {
     res.status(200).send(shuffled);
   } catch (error) {
     console.error("ERROR GETTING SHUFFLED BOTS", error);
+    rollbar.error(error);
     res.sendStatus(400);
   }
 });
@@ -67,12 +80,15 @@ app.post("/api/duel", (req, res) => {
     if (compHealth > playerHealth) {
       playerRecord.losses += 1;
       res.status(200).send("You lost!");
+      rollbar.info("Player lost a duel");
     } else {
       playerRecord.losses += 1;
       res.status(200).send("You won!");
+      rollbar.info("Player won a duel");
     }
   } catch (error) {
     console.log("ERROR DUELING", error);
+    rollbar.error(error);
     res.sendStatus(400);
   }
 });
@@ -82,6 +98,7 @@ app.get("/api/player", (req, res) => {
     res.status(200).send(playerRecord);
   } catch (error) {
     console.log("ERROR GETTING PLAYER STATS", error);
+    rollbar.error(error);
     res.sendStatus(400);
   }
 });
